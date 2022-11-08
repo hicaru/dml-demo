@@ -1,5 +1,4 @@
 from epoch import Epoch
-from block import Block
 from config import zero_512_hash
 
 
