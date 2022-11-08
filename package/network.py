@@ -1,68 +1,43 @@
-from p2p_python.utils import setup_p2p_params, setup_logger
-from p2p_python.server import Peer2Peer, Peer2PeerCmd
-import logging
-import asyncio
-import aiomonitor
+from p2pnetwork.node import Node
+from p2pnetwork.nodeconnection import NodeConnection
 import time
 
 
-loop = asyncio.get_event_loop()
-log = logging.getLogger(__name__)
+class MyOwnNodeConnection (NodeConnection):
+    # Python class constructor
+     def __init__(self, main_node, sock, id, host, port):
+        super(MyOwnNodeConnection, self).__init__(main_node, sock, id, host, port)
 
-setup_logger(logging.INFO)
-
-
-setup_p2p_params(
-    network_ver=11111,  # (int) identify other network
-    p2p_port=2000, # (int) P2P listen port
-    p2p_accept=True, # (bool) switch on TCP server
-    p2p_udp_accept=True, # (bool) switch on UDP server
-)
-p2p = Peer2Peer(listen=100)  # allow 100 connection
-p2p.setup()
+    # Check yourself what you would like to change and override! See the 
+    # documentation and code of the nodeconnection class.
 
 
-def close():
-    p2p.close()
-    loop.call_later(1.0, loop.stop)
+class MyOwnPeer2PeerNode (Node):
+    # Python class constructor
+    def __init__(self, host, port, id=None, callback=None, max_connections=0):
+        super(MyOwnPeer2PeerNode, self).__init__(host, port, id, callback, max_connections)
 
-class DirectCmd(object):
- 
-    @staticmethod
-    async def what_is_your_name(user, data):
-        print("what_is_your_name", user, data)
-        return {"you return": time.time()}
- 
-    @staticmethod
-    async def get_time_now(user, data):
-        print("get_time_now", user, data)
-        return {"get time now": time.time()}
+    # Override event functions...
 
-# register methods for DirectCmd
-p2p.event.setup_events_from_class(DirectCmd)
-# throw cmd by `await p2p.send_direct_cmd(DirectCmd.what_is_your_name, 'kelly')`
-# or `await p2p.send_direct_cmd('what_is_your_name', 'kelly')`
+    # Override this method to initiate your own NodeConnection class.
+    def create_new_connection(self, connection, id, host, port):
+        return MyOwnNodeConnection(self, connection, id, host, port)
 
 
-# You can setup broadcast policy (default disabled)
-# WARNING: You must set strict policy or will be broken by users
-async def broadcast_check_normal(user, data):
-    return True
+node = MyOwnPeer2PeerNode("127.0.0.1", 10001)
+time.sleep(1)
 
-# overwrite method
-p2p.broadcast_check = broadcast_check_normal
+# Do not forget to start your node!
+node.start()
+time.sleep(1)
 
-# setup netcat monitor
-local = locals().copy()
-local.update({k: v for k, v in globals().items() if not k.startswith('__')})
-log.info('local', list(local.keys()))
-aiomonitor.start_monitor(loop, port=3000, locals=local)
-log.info(f"you can connect by `nc 127.0.0.1 3000`")
- 
-# start event loop
-# close by `close()` on netcat console
-try:
-    loop.run_forever()
-except KeyboardInterrupt:
-    log.info("closing")
-loop.close()
+# Connect with another node, otherwise you do not create any network!
+node.connect_with_node('127.0.0.1', 10002)
+time.sleep(2)
+
+# Example of sending a message to the nodes (dict).
+node.send_to_nodes({"message": "Hi there!"})
+
+time.sleep(5) # Create here your main loop of the application
+
+node.stop()
