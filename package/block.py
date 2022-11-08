@@ -10,7 +10,7 @@ class Block:
         self.transactions = transactions
         self.creater = creater
         self.hash = hashlib.sha256(
-            self.blocknumber + ','.join(str(x) for x in self.transactions) + self.creater + self.previous_hash + self.epoch
+            self.blocknumber + '.'.join(str(x) for x in self.transactions) + self.creater + self.previous_hash + self.epoch
         ).hexdigest()
 
     def serialize(self):
