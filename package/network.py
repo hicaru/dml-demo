@@ -1,43 +1,52 @@
-from p2pnetwork.node import Node
-from p2pnetwork.nodeconnection import NodeConnection
 import time
+from node import DMLNode
 
 
-class MyOwnNodeConnection (NodeConnection):
-    # Python class constructor
-     def __init__(self, main_node, sock, id, host, port):
-        super(MyOwnNodeConnection, self).__init__(main_node, sock, id, host, port)
+node_1 = DMLNode("127.0.0.1", 8001, 1)
+node_2 = DMLNode("127.0.0.1", 8002, 2)
+node_3 = DMLNode("127.0.0.1", 8003, 3)
 
-    # Check yourself what you would like to change and override! See the 
-    # documentation and code of the nodeconnection class.
-
-
-class MyOwnPeer2PeerNode (Node):
-    # Python class constructor
-    def __init__(self, host, port, id=None, callback=None, max_connections=0):
-        super(MyOwnPeer2PeerNode, self).__init__(host, port, id, callback, max_connections)
-
-    # Override event functions...
-
-    # Override this method to initiate your own NodeConnection class.
-    def create_new_connection(self, connection, id, host, port):
-        return MyOwnNodeConnection(self, connection, id, host, port)
-
-
-node = MyOwnPeer2PeerNode("127.0.0.1", 10001)
 time.sleep(1)
 
-# Do not forget to start your node!
-node.start()
+node_1.start()
+node_2.start()
+node_3.start()
+
 time.sleep(1)
 
-# Connect with another node, otherwise you do not create any network!
-node.connect_with_node('127.0.0.1', 10002)
+debug = False
+node_1.debug = debug
+node_2.debug = debug
+node_3.debug = debug
+
+
+node_1.connect_with_node('127.0.0.1', 8002)
+node_2.connect_with_node('127.0.0.1', 8003)
+node_3.connect_with_node('127.0.0.1', 8001)
+
 time.sleep(2)
 
-# Example of sending a message to the nodes (dict).
-node.send_to_nodes({"message": "Hi there!"})
+node_1.send_to_nodes("message: Hi there!")
 
-time.sleep(5) # Create here your main loop of the application
+time.sleep(2)
 
-node.stop()
+print("node 1 is stopping..")
+node_1.stop()
+
+time.sleep(20)
+
+node_2.send_to_nodes("message: Hi there node 2!")
+node_2.send_to_nodes("message: Hi there node 2!")
+node_2.send_to_nodes("message: Hi there node 2!")
+node_3.send_to_nodes("message: Hi there node 2!")
+node_3.send_to_nodes("message: Hi there node 2!")
+node_3.send_to_nodes("message: Hi there node 2!")
+
+time.sleep(10)
+
+time.sleep(5)
+
+node_1.stop()
+node_2.stop()
+node_3.stop()
+print('end test')
